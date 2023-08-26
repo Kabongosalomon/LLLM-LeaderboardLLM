@@ -8,15 +8,15 @@ from tqdm import tqdm
 from datasets import load_dataset
 from torch.utils.data import Dataset, DataLoader
 from pprint import pprint
-import copy
 import numpy as np
 
 from collections import defaultdict
-import ipdb
-import random
+import ipdb, os, random, copy
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
+
+from tokenizers import AddedToken
 
 from torch.optim import AdamW
 import argparse
@@ -33,8 +33,6 @@ from transformers import (
     LongT5Model
 ) 
 
-# pd.options.display.max_rows , pd.options.display.max_columns  = 100,100  
-
 device  = 'cuda' if torch.cuda.is_available() else "cpu"
 
 mode = "tdm"
@@ -42,23 +40,22 @@ mode = "tdm"
 train_path = f'data/train_{mode}_f1_v2_short.parquet' 
 validation_path = f'data/dev_{mode}_f1_v2_short.parquet'
 
-# mode = "tdms"
-# train_path = 'data/train_tdms_f1_v2_short.parquet' 
-# validation_path = 'data/dev_tdms_f1_v2_short.parquet'
-
-
 # Check the data 
 model_name = ["google/flan-t5", "google/long-t5"]
 size = ["-base", "-large", "-xl"]
 model_attention = ["","-local", "-tglobal"]
 
 model_idx = 0
-size_idx = 1
+size_idx = 0
 model_idx = 0
 
-bs = 32
+bs = 2
 epochs = 5
-gpus = 2
+gpus = -1
+workers = os.cpu_count()
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false" # or "true", depending on your needs
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:70'
 
 # model_idx = 1
 # size_idx = 0
@@ -71,13 +68,15 @@ gpus = 2
 
 model_max_length = 512
 # max_len_inp = 432
-max_len_inp = 500
-# max_len_inp = 512
-model_max_len_out = 100
+# max_len_inp = 500
+max_len_inp = 512
+model_max_len_out = 512
 
 t5_tokenizer = AutoTokenizer.from_pretrained(f"{model_name[model_idx]}{model_attention[model_idx]}{size[size_idx]}", model_max_length=model_max_length)
 t5_model = T5ForConditionalGeneration.from_pretrained(f"{model_name[model_idx]}{model_attention[model_idx]}{size[size_idx]}")
-# t5_model = LongT5Model.from_pretrained(f"{model[model_idx]}{model_attention[model_idx]}{size[size_idx]}")
+
+t5_tokenizer.add_tokens(AddedToken("{", normalized=False))
+t5_tokenizer.add_tokens(AddedToken("}", normalized=False))
 
 print(f"Max token lenght: {t5_tokenizer.model_max_length}")
 
@@ -119,22 +118,33 @@ class QuestionGenerationDataset(Dataset):
         for rownum, val in tqdm(self.data.iterrows(), total=len(self.data)): # Iterating over the dataframe
             template_question, answer = val[self.template_question], val[self.answer]
          
-            input_ = f"{str(template_question)} </s>" # T5 Input format for question answering tasks 
-            target = f"{answer} </s>" # Output format we require
+            input_ = f"{str(template_question)}" # T5 Input format for question answering tasks 
+            target = f"{str(answer)}" # Output format we require
 
-            if len(target.split()) > self.max_len_output:
-                continue 
+            # TODO: Not sure if this is needed as the tokenizer can truncate the output. 
+            encoded = t5_tokenizer.batch_encode_plus(
+                [input_], 
+                truncation = False,
+                return_tensors="pt"
+            )
+            
+            if len(encoded['input_ids'][0]) > self.max_len_output:
+                continue  
+                
             # tokenize inputs
             tokenized_inputs = self.tokenizer.batch_encode_plus(
-                [input_], max_length=self.max_len_input,padding='max_length',
-                truncation = True,return_tensors="pt"
+                [input_], 
+                max_length=self.max_len_input,
+                padding='max_length',
+                truncation = True,
+                return_tensors="pt"
             )
             # tokenize targets
             tokenized_targets = self.tokenizer.batch_encode_plus(
                 [target], 
-                # max_length=self.max_len_output,
+                max_length=self.max_len_output,
                 padding='max_length',
-                truncation = False,
+                truncation = True,
                 return_tensors="pt"
             )
 
@@ -144,35 +154,12 @@ class QuestionGenerationDataset(Dataset):
 
 # In[6]:
 
-
-# train_path = 'train_squad.parquet' # change this accordingly
-# validation_path = 'validation_squad.parquet'
-
-
-
-# train_dataset = QuestionGenerationDataset(t5_tokenizer,train_path)
-# validation_dataset = QuestionGenerationDataset(t5_tokenizer,validation_path)
 train_dataset = QuestionGenerationDataset(t5_tokenizer, train_path, 
                                           max_len_inp=max_len_inp, max_len_out=model_max_len_out)
 validation_dataset = QuestionGenerationDataset(t5_tokenizer, validation_path, 
                                                max_len_inp=max_len_inp, max_len_out=model_max_len_out)
 
-
-
 # In[7]:
-
-
-# Data Sample
-
-train_sample = train_dataset[50] # thanks to __getitem__
-decoded_train_input = t5_tokenizer.decode(train_sample['source_ids'])
-decoded_train_output = t5_tokenizer.decode(train_sample['target_ids'])
-
-print(decoded_train_input)
-print(decoded_train_output)
-
-
-# # Fine Tuning T5
 
 # In[8]:
 
@@ -195,15 +182,14 @@ class T5Tuner(pl.LightningModule):
     def forward( self, input_ids, attention_mask=None, 
                 decoder_attention_mask=None, 
                 lm_labels=None):
-      
-         outputs = self.model(
+        outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             decoder_attention_mask=decoder_attention_mask,
             labels=lm_labels,
         )
          
-         return outputs
+        return outputs
 
     def training_step(self, batch, batch_idx):
         outputs = self.forward(
@@ -245,10 +231,6 @@ class T5Tuner(pl.LightningModule):
 
 # In[9]:
 
-
-device
-
-
 # In[ ]:
 
 early_stop_callback = EarlyStopping(
@@ -264,11 +246,15 @@ model = T5Tuner(t5_model, t5_tokenizer, bs)
 
 trainer = pl.Trainer(max_epochs = epochs,
                     #  gpus=gpus,
-                     gpus=-1,
-                     strategy='dp',
+                     # gpus=-1,
+                     strategy = 'ddp',
+                     accelerator = "auto", 
+                     devices = "auto",
                     #  accelerator='gpu', 
                     #  devices=2,
-                     callbacks=[early_stop_callback])
+                     callbacks = [
+                         early_stop_callback
+                     ])
 
 trainer.fit(model)
 
