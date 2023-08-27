@@ -49,7 +49,7 @@ model_idx = 0
 size_idx = 1
 model_idx = 0
 
-bs = 5
+bs = 4
 epochs = 5
 gpus = -1
 workers = os.cpu_count()
@@ -80,7 +80,6 @@ t5_tokenizer.add_tokens(AddedToken("}", normalized=False))
 
 print(f"Max token lenght: {t5_tokenizer.model_max_length}")
 print(f"Batch size: {bs}")
-
 num_gpus = torch.cuda.device_count()
 print(f"Number of GPUs available: {num_gpus}")
 
