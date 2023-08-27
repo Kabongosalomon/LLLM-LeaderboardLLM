@@ -46,16 +46,16 @@ size = ["-base", "-large", "-xl"]
 model_attention = ["","-local", "-tglobal"]
 
 model_idx = 0
-size_idx = 0
+size_idx = 1
 model_idx = 0
 
-bs = 2
+bs = 5
 epochs = 5
 gpus = -1
 workers = os.cpu_count()
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false" # or "true", depending on your needs
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:70'
+# os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:70'
 
 # model_idx = 1
 # size_idx = 0
@@ -79,6 +79,10 @@ t5_tokenizer.add_tokens(AddedToken("{", normalized=False))
 t5_tokenizer.add_tokens(AddedToken("}", normalized=False))
 
 print(f"Max token lenght: {t5_tokenizer.model_max_length}")
+print(f"Batch size: {bs}")
+
+num_gpus = torch.cuda.device_count()
+print(f"Number of GPUs available: {num_gpus}")
 
 class QuestionGenerationDataset(Dataset):
     def __init__(self, tokenizer, filepath, max_len_inp=512,max_len_out=96):
@@ -217,12 +221,12 @@ class T5Tuner(pl.LightningModule):
 
     def train_dataloader(self):
         return DataLoader(train_dataset, batch_size=self.batch_size,
-                          num_workers=2)
+                          num_workers=workers)
 
     def val_dataloader(self):
         return DataLoader(validation_dataset, 
                           batch_size=self.batch_size,
-                          num_workers=2)
+                          num_workers=workers)
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=3e-4, eps=1e-8)
@@ -247,7 +251,7 @@ model = T5Tuner(t5_model, t5_tokenizer, bs)
 trainer = pl.Trainer(max_epochs = epochs,
                     #  gpus=gpus,
                      # gpus=-1,
-                     strategy = 'ddp',
+                     strategy = 'auto',
                      accelerator = "auto", 
                      devices = "auto",
                     #  accelerator='gpu', 
@@ -258,6 +262,6 @@ trainer = pl.Trainer(max_epochs = epochs,
 
 trainer.fit(model)
 
-model.model.save_pretrained(f'model_ckpt/{mode}_{model_name[model_idx].replace("/","_").replace("-","_")}{model_attention[model_idx].replace("-","_")}{size[size_idx].replace("-","_")}_{bs}_{epochs}_{model_max_length}_{max_len_inp}_{model_max_len_out}')
+model.model.save_pretrained(f'model_ckpt/{mode}_{model_name[model_idx].replace("/","_").replace("-","_")}{model_attention[model_idx].replace("-","_")}{size[size_idx].replace("-","_")}_{bs}_{epochs}_{model_max_length}_{max_len_inp}_{model_max_len_out}_gpu_{num_gpus}')
 # t5_tokenizer.save_pretrained(f'{model[model_idx]}{model_attention[model_idx]}{size[size_idx]}_tokenizer_{bs}_{epochs}_{model_max_length}_{max_len_inp}_{model_max_len_out}')
-t5_tokenizer.save_pretrained(f'model_ckpt/{mode}_{model_name[model_idx].replace("/","_").replace("-","_")}{model_attention[model_idx].replace("-","_")}{size[size_idx].replace("-","_")}_tokenizer_{bs}_{epochs}_{model_max_length}_{max_len_inp}_{model_max_len_out}')
+t5_tokenizer.save_pretrained(f'model_ckpt/{mode}_{model_name[model_idx].replace("/","_").replace("-","_")}{model_attention[model_idx].replace("-","_")}{size[size_idx].replace("-","_")}_tokenizer_{bs}_{epochs}_{model_max_length}_{max_len_inp}_{model_max_len_out}_gpu_{num_gpus}')
