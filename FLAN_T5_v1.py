@@ -49,13 +49,13 @@ model_idx = 0
 size_idx = 0
 model_idx = 0
 
-bs = 2
+bs = 4
 epochs = 5
 gpus = -1
 workers = os.cpu_count()
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false" # or "true", depending on your needs
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:70'
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:100'
 
 # model_idx = 1
 # size_idx = 0
@@ -247,7 +247,7 @@ model = T5Tuner(t5_model, t5_tokenizer, bs)
 trainer = pl.Trainer(max_epochs = epochs,
                     #  gpus=gpus,
                      # gpus=-1,
-                     strategy = 'ddp',
+                     strategy = 'auto',
                      accelerator = "auto", 
                      devices = "auto",
                     #  accelerator='gpu', 
