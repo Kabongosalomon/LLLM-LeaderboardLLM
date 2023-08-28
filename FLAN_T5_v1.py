@@ -35,8 +35,8 @@ from transformers import (
 
 device  = 'cuda' if torch.cuda.is_available() else "cpu"
 
-mode = "tdm"
-# mode = "tdms"
+# mode = "tdm"
+mode = "tdms"
 train_path = f'data/train_{mode}_f1_v2_short.parquet' 
 validation_path = f'data/dev_{mode}_f1_v2_short.parquet'
 
@@ -49,7 +49,7 @@ model_idx = 0
 size_idx = 1
 model_idx = 0
 
-bs = 4
+bs = 1
 epochs = 5
 gpus = -1
 workers = os.cpu_count()
@@ -250,7 +250,7 @@ model = T5Tuner(t5_model, t5_tokenizer, bs)
 trainer = pl.Trainer(max_epochs = epochs,
                     #  gpus=gpus,
                      # gpus=-1,
-                     strategy = 'auto',
+                     strategy = 'ddp',
                      accelerator = "auto", 
                      devices = "auto",
                     #  accelerator='gpu', 
