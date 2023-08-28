@@ -49,7 +49,7 @@ model_idx = 0
 size_idx = 1
 model_idx = 0
 
-bs = 4
+bs = 1
 epochs = 5
 gpus = -1
 workers = os.cpu_count()
