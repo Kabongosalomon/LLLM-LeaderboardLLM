@@ -1,0 +1,14 @@
+datasets 
+pyarrow
+tqdm     
+transformers 
+tokenizers 
+sentencepiece 
+pytorch-lightning 
+torchtext
+ipdb
+trl
+peft
+accelerate
+bitsandbytes
+wandb
