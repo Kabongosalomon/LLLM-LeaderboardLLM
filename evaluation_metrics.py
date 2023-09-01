@@ -96,7 +96,7 @@ def has_feature_value_text_based(contribution, feature_name):
 def has_feature_value_json_based(contribution, feature_name):
     contribution_root = get_contribution_root(contribution)
     feature_value = get_feature_value_json_based(contribution_root, feature_name)
-    # contribution_root = contribution.get("leaderboard", {}) if isinstance(contribution, dict) else {}
+    # contribution_root = contribution.get("LEADERBOARD", {}) if isinstance(contribution, dict) else {}
     # feature_value = contribution_root.get(feature_name, {}) if isinstance(contribution_root, dict) else {}
     return feature_value != '-' and feature_value != ""
 
@@ -124,7 +124,7 @@ def get_feature_value_json_based(contribution_root, feature_name):
 def get_contribution_root(contribution):
     contribution_root = {}
     if isinstance(contribution, dict):
-        contribution_keys = [key for key in contribution.keys() if key.lower() == "leaderboard"]
+        contribution_keys = [key for key in contribution.keys() if key.lower() == "LEADERBOARD"]
         if contribution_keys:
             contribution_root = contribution[contribution_keys[0]]
 
@@ -144,7 +144,7 @@ def extract_label_prediction_feature_values_text(feature_name, label_contributio
 
 
 def extract_label_prediction_feature_values_json(feature_name, label_contribution, prediction_contribution):
-    label_feature_value = label_contribution.get("leaderboard", {}).get(feature_name, "") if isinstance(
+    label_feature_value = label_contribution.get("LEADERBOARD", {}).get(feature_name, "") if isinstance(
         label_contribution, dict) else ""
     prediction_contribution_root = get_contribution_root(contribution=prediction_contribution)
     prediction_feature_value = get_feature_value_json_based(contribution_root=prediction_contribution_root,
