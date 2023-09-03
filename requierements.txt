@@ -5,6 +5,8 @@ accelerate
 datasets
 bitsandbytes
 wandb
+ipdb
+scipy
 
 #datasets 
 #pyarrow
