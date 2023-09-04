@@ -83,6 +83,15 @@ script_args.seq_length
 # script_args.output_dir = "./model_ckpt/tdms_all_template_v2"
 # script_args.run_name = "sft_llama2_tdms_all_Template_v2"
 
+# script_args.dataset_name = "./data/LLLM_DOCTEAT_TDM_ALL_TEMPLATE/fold1"
+# script_args.output_dir = "./model_ckpt/docteat_tdm_f1_all_template"
+# script_args.run_name = "sft_llama2_docteat_tdm_f1_all_Template"
+# script_args.seq_length = 1024
+# script_args.per_device_train_batch_size = 9
+# script_args.gradient_accumulation_steps = 2
+# # # multi GPU
+# # script_args.per_device_train_batch_size = 4
+
 script_args.dataset_name = "./data/LLLM_LONG_TDM_ALL_TEMPLATE/fold1"
 script_args.output_dir = "./model_ckpt/long_tdm_f1_all_template"
 script_args.run_name = "sft_llama2_long_tdm_f1_all_Template"
