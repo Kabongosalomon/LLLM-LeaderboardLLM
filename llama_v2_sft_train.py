@@ -83,17 +83,18 @@ script_args.seq_length
 # script_args.output_dir = "./model_ckpt/tdms_all_template_v2"
 # script_args.run_name = "sft_llama2_tdms_all_Template_v2"
 
-script_args.dataset_name = "./data/LLLM_LONG_TDMS_ALL_TEMPLATE/fold2"
-script_args.output_dir = "./model_ckpt/long_tdms_f2_all_template"
-script_args.run_name = "sft_llama2_long_tdms_f2_all_Template"
+script_args.dataset_name = "./data/LLLM_LONG_TDM_ALL_TEMPLATE/fold1"
+script_args.output_dir = "./model_ckpt/long_tdm_f1_all_template"
+script_args.run_name = "sft_llama2_long_tdm_f1_all_Template"
 script_args.seq_length = 2400
 script_args.per_device_train_batch_size = 2
 script_args.gradient_accumulation_steps = 2
 
-script_args.save_steps = 500
-script_args.logging_steps = 500
+script_args.save_steps = 50
+script_args.logging_steps = 50
 script_args.streaming = False
 script_args.num_train_epochs = 5
+script_args.save_total_limit = 10
 
 
 def chars_token_ratio(dataset, tokenizer, nb_examples=400):
@@ -233,6 +234,7 @@ training_args = TrainingArguments(
     # max_steps=script_args.max_steps,
     report_to=script_args.log_with,
     save_steps=script_args.save_steps,
+    save_total_limit=script_args.save_total_limit,
     group_by_length=script_args.group_by_length,
     lr_scheduler_type=script_args.lr_scheduler_type,
     warmup_steps=script_args.num_warmup_steps,
