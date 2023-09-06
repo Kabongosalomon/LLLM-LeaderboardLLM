@@ -1,4 +1,4 @@
-s#!/usr/bin/env python
+#!/usr/bin/env python
 # coding: utf-8
 
 # Fine-Tune Llama2-7b on custom dataset
@@ -83,21 +83,21 @@ script_args.seq_length
 # script_args.output_dir = "./model_ckpt/tdms_all_template_v2"
 # script_args.run_name = "sft_llama2_tdms_all_Template_v2"
 
-# script_args.dataset_name = "./data/LLLM_DOCTEAT_TDM_ALL_TEMPLATE/fold1"
-# script_args.output_dir = "./model_ckpt/docteat_tdm_f1_all_template"
-# script_args.run_name = "sft_llama2_docteat_tdm_f1_all_Template"
-# script_args.seq_length = 1024
-# script_args.per_device_train_batch_size = 6
-# script_args.gradient_accumulation_steps = 2
-# # # multi GPU
-# # script_args.per_device_train_batch_size = 4
-
-script_args.dataset_name = "./data/LLLM_LONG_TDM_ALL_TEMPLATE/fold1"
-script_args.output_dir = "./model_ckpt/long_tdm_f1_all_template"
-script_args.run_name = "sft_llama2_long_tdm_f1_all_Template"
-script_args.seq_length = 2400
-script_args.per_device_train_batch_size = 2
+script_args.dataset_name = "./data/LLLM_DOCTEAT_TDMS_ALL_TEMPLATE/fold2"
+script_args.output_dir = "./model_ckpt/docteat_tdms_f2_all_template"
+script_args.run_name = "sft_llama2_docteat_tdms_f2_all_Template"
+script_args.seq_length = 1024
+script_args.per_device_train_batch_size = 9
 script_args.gradient_accumulation_steps = 2
+# # multi GPU
+# script_args.per_device_train_batch_size = 4
+
+# script_args.dataset_name = "./data/LLLM_LONG_TDM_ALL_TEMPLATE/fold1"
+# script_args.output_dir = "./model_ckpt/long_tdm_f1_all_template"
+# script_args.run_name = "sft_llama2_long_tdm_f1_all_Template"
+# script_args.seq_length = 2400
+# script_args.per_device_train_batch_size = 2
+# script_args.gradient_accumulation_steps = 2
 
 script_args.save_steps = 50
 script_args.logging_steps = 50
@@ -139,8 +139,8 @@ def print_trainable_parameters(model):
 
 def prepare_sample_text(example):
     """Prepare the text from a sample of the dataset."""
-    # text = f"Question: {example['prompt']}\n\nAnswer: {example['answer']}"
-    text = f"{example['prompt']}\n{example['answer']}"
+    text = f"Question: {example['prompt']}\n\nAnswer: {example['answer']}"
+    # text = f"{example['prompt']}\n{example['answer']}"
     return text
 
 
