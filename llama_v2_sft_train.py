@@ -82,28 +82,29 @@ script_args.seq_length
 script_args.model_name = "meta-llama/Llama-2-13b-hf"
 script_args.size = "13b"
 
-
-
-
 # script_args.dataset_name = "./data/LLLM_DOCTEAT_TDM_ALL_TEMPLATE/fold2"
 # script_args.output_dir = "./model_ckpt/docteat_tdm_f2_all_template"
 # script_args.run_name = "sft_llama2_docteat_tdm_f2_all_Template"
 
-script_args.dataset_name = "./data/LLLM_DOCTEAT_TDMS_ALL_TEMPLATE/fold2"
-script_args.output_dir = f"./model_ckpt/docteat_llama2_{script_args.size}_tdms_f2_all_template"
-script_args.run_name = f"sft_docteat_llama2_{script_args.size}_tdms_f2_all_Template"
-script_args.seq_length = 1024
-script_args.per_device_train_batch_size = 6
-script_args.gradient_accumulation_steps = 2
+# # script_args.dataset_name = "./data/LLLM_DOCTEAT_TDMS_ALL_TEMPLATE/fold2"
+# # script_args.output_dir = f"./model_ckpt/docteat_llama2_{script_args.size}_tdms_f2_all_template"
+# # script_args.run_name = f"sft_docteat_llama2_{script_args.size}_tdms_f2_all_Template"
+# script_args.dataset_name = "./data/LLLM_DOCTEAT_TDMS_ALL_TEMPLATE/fold2"
+# script_args.output_dir = f"./model_ckpt/docteat_llama2_{script_args.size}_tdms_f2_all_template"
+# script_args.run_name = f"sft_docteat_llama2_{script_args.size}_tdms_f2_all_Template"
+# script_args.seq_length = 1024
+# script_args.per_device_train_batch_size = 6
+# script_args.gradient_accumulation_steps = 2
 # # multi GPU
 # script_args.per_device_train_batch_size = 4
 
-# script_args.dataset_name = "./data/LLLM_LONG_TDM_ALL_TEMPLATE/fold2"
-# script_args.output_dir = f"./model_ckpt/long_llama2_{script_args.size}_tdms_f2_all_template"
-# script_args.run_name = f"sft_long_llama2_{script_args.size}_tdms_f2_all_Template"
+script_args.dataset_name = "./data/LLLM_LONG_TDMS_ALL_TEMPLATE/fold2"
+script_args.output_dir = f"./model_ckpt/long_llama2_{script_args.size}_tdms_f2_all_template"
+script_args.run_name = f"sft_long_llama2_{script_args.size}_tdms_f2_all_Template"
 # script_args.seq_length = 2400
-# script_args.per_device_train_batch_size = 2
-# script_args.gradient_accumulation_steps = 2
+script_args.seq_length = 2000
+script_args.per_device_train_batch_size = 2
+script_args.gradient_accumulation_steps = 2
 
 script_args.save_steps = 50
 script_args.logging_steps = 50
