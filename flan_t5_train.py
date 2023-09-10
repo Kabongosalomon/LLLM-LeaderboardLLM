@@ -99,9 +99,9 @@ script_args.seq_length
 script_args.model_name = "google/flan-t5"
 script_args.size = "large"
 
-script_args.dataset_name = "./data/LLLM_DOCTEAT_TDMS_ALL_TEMPLATE/fold2"
-script_args.output_dir = f"./model_ckpt/docteat_flan_t5_{script_args.size}_tdms_f2_all_template"
-script_args.run_name = f"sft_docteat_flan_t5_{script_args.size}_tdms_f2_all_Template"
+script_args.dataset_name = "./data/LLLM_DOCTEAT_TDMS_ALL_TEMPLATE/fold1"
+script_args.output_dir = f"./model_ckpt/docteat_flan_t5_{script_args.size}_tdms_f1_all_template"
+script_args.run_name = f"sft_docteat_flan_t5_{script_args.size}_tdms_f1_all_Template"
 
 # script_args.dataset_name = "./data/LLLM_DOCTEAT_TDM_ALL_TEMPLATE/fold2"
 # script_args.output_dir = f"./model_ckpt/docteat_flan_t5_{script_args.size}_tdm_f2_all_template"
@@ -162,7 +162,8 @@ dataset = DatasetDict.load_from_disk(f"{script_args.dataset_name}")
 dataset = dataset.shuffle(seed=seed)
 
 train_dataset = dataset["train"]
-eval_dataset = dataset["validation"]
+# eval_dataset = dataset["validation"]
+eval_dataset = dataset["validation"].shard(num_shards=30, index=0)
 
 def compute_metrics(eval_preds):
 
