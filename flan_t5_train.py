@@ -18,11 +18,9 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, EarlyStoppingCall
 from transformers import DataCollatorForSeq2Seq
 from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments, HfArgumentParser
 from transformers.optimization import Adafactor, AdafactorSchedule
+from evaluation_metrics import Metrics, THRESHOLD
 
 import random, evaluate
-
-# from ../evaluation_metrics import Metrics
-
 
 seed = 42
 torch.cuda.manual_seed_all(seed)
@@ -30,8 +28,6 @@ np.random.seed(seed)
 random.seed(seed)
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false" # or "true", depending on your needs
-
-# pd.options.display.max_rows , pd.options.display.max_columns  = 100,100  
 
 device = 'cuda' if torch.cuda.is_available() else "cpu"
 device
@@ -100,8 +96,14 @@ script_args.model_name = "google/flan-t5"
 script_args.size = "large"
 
 script_args.dataset_name = "./data/LLLM_DOCTEAT_TDMS_ALL_TEMPLATE/fold1"
-script_args.output_dir = f"./model_ckpt/docteat_flan_t5_{script_args.size}_tdms_f1_all_template"
-script_args.run_name = f"sft_docteat_flan_t5_{script_args.size}_tdms_f1_all_Template"
+script_args.output_dir = f"./model_ckpt/docteat_flan_t5_{script_args.size}_tdms_f1_all_template_final_2"
+script_args.run_name = f"sft_docteat_flan_t5_{script_args.size}_tdms_f1_all_template_final_2"
+
+# script_args.dataset_name = "./data/LLLM_DOCTEAT_TDM_ALL_TEMPLATE_50_PERCENT/fold1"
+# script_args.output_dir = f"./model_ckpt/docteat_flan_t5_{script_args.size}_tdm_f1_all_template_50_percent"
+# script_args.run_name = f"sft_docteat_flan_t5_{script_args.size}_tdm_f1_all_template_50_percent"
+# # script_args.output_dir = f"./model_ckpt/docteat_flan_t5_{script_args.size}_tdms_f1_all_template"
+# # script_args.run_name = f"sft_docteat_flan_t5_{script_args.size}_tdms_f1_all_Template"
 
 # script_args.dataset_name = "./data/LLLM_DOCTEAT_TDM_ALL_TEMPLATE/fold2"
 # script_args.output_dir = f"./model_ckpt/docteat_flan_t5_{script_args.size}_tdm_f2_all_template"
@@ -109,7 +111,7 @@ script_args.run_name = f"sft_docteat_flan_t5_{script_args.size}_tdms_f1_all_Temp
 
 script_args.seq_length = 512
 script_args.per_device_train_batch_size = 2
-script_args.gradient_accumulation_steps = 2
+script_args.gradient_accumulation_steps = 4
 script_args.per_device_eval_batch_size = 2
 script_args.max_source_length = 512
 script_args.max_target_length = 512
@@ -127,12 +129,15 @@ script_args.model_max_length = 512
 # script_args.per_device_train_batch_size = 2
 # script_args.gradient_accumulation_steps = 2
 
-script_args.save_steps = 50
-script_args.logging_steps = 50
+script_args.save_steps = 5000
+script_args.eval_steps = 5000
+script_args.logging_steps = 5000
 script_args.streaming = False
 script_args.num_train_epochs = 5
-script_args.save_total_limit = 10
+script_args.save_total_limit = 50
 
+script_args.save_strategy = "steps" #"epoch"
+script_args.evaluation_strategy = "steps" #"epoch"
 
 tokenizer = AutoTokenizer.from_pretrained(f"{script_args.model_name}-{script_args.size}")
 
@@ -178,24 +183,11 @@ def compute_metrics(eval_preds):
     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)  # type: ignore
     decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
     
-    clf_metrics = evaluate.combine(["accuracy", "f1", "precision", "recall"])
-    results = clf_metrics.compute(predictions=[1 if "unanswerable" == x.replace("</s>", "") else 0 for x in decoded_preds], 
-                        references=[1 if "unanswerable" == x else 0 for x in decoded_labels]
-    )
-
-    rouge = evaluate.load('rouge')
+    results = Metrics.evaluate_property_wise_json_based(label_list=decoded_labels, prediction_list=decoded_preds)
+    results.update(Metrics.evaluate_rouge(label_list=decoded_labels, prediction_list=decoded_preds))  
     
-    rouge_results = rouge.compute(
-        predictions=[pred.replace("</s>", "") for pred in decoded_preds],
-        references=decoded_labels
-    )
-    results.update(rouge_results) 
-
-    # ipdb.set_trace()
-    
-    # result = Metrics.evaluate_property_wise_text_based(label_list=decoded_labels, prediction_list=decoded_preds)
-    # result.update(Metrics.evaluate_rouge(label_list=decoded_labels, prediction_list=decoded_preds))
     return results
+
 
 def tokenize_function(sample):
     # tokenize inputs
@@ -208,9 +200,6 @@ def tokenize_function(sample):
     labels = tokenizer(text_target=sample["answer"], max_length=script_args.max_target_length, padding="max_length",
                        truncation=True, return_tensors="pt")
 
-    # # Check if the length of labels is >= 512
-    # if any(len(label) >= 512 for label in labels["input_ids"]):
-    #     return {}  # Return empty dict to skip this example
 
     labels["input_ids"] = [
         [(l if l != tokenizer.pad_token_id else -100) for l in label] for label in labels["input_ids"]  # type: ignore
@@ -256,12 +245,14 @@ training_args = Seq2SeqTrainingArguments(
     # greater_is_better=True,
     
     # logging_dir=f"{model_save_path}/logs",
-    # eval_steps=500,  # Evaluate the model every 500 steps,
-    evaluation_strategy="epoch",
-    # logging_strategy="steps",
-    save_strategy="epoch", # steps
+    eval_steps=script_args.eval_steps,  # Evaluate the model every 500 steps,
+    # save_strategy="epoch", # steps
+    # evaluation_strategy="epoch",
+    evaluation_strategy=script_args.evaluation_strategy,
+    logging_strategy=script_args.evaluation_strategy,
+    save_strategy=script_args.save_strategy, # 
     # push_to_hub=False,    
-    # seed=seed
+    seed=seed
 )
 
 
@@ -275,17 +266,16 @@ trainer = Seq2SeqTrainer(
     # max_seq_length=script_args.seq_length,
     compute_metrics=compute_metrics,
     optimizers=(optimizer, lr_scheduler),
-    callbacks=([early_stopping_callback])
+    # callbacks=([early_stopping_callback])
 
 )
 
 trainer.train()
 
-# # MODEL SAVING
+# MODEL SAVING
 trainer.save_model(script_args.output_dir)
 
-# output_dir = os.path.join(script_args.output_dir, "final_checkpoint_")
-output_dir = os.path.join(script_args.output_dir, f"{script_args.run_name}")
+output_dir = os.path.join(script_args.output_dir, "best_checkpoint")
 
 trainer.model.save_pretrained(output_dir)
 
