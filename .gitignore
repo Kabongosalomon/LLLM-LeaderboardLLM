@@ -166,7 +166,13 @@ cython_debug/
 *.sh
 *.txt
 *.tex
+*.json
+
 
 data/
+data_proccess/
 .virtual_documents/
 .vscode/
+model_ckpt/
+wandb/
+lightning_logs/
