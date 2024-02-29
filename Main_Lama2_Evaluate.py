@@ -3,7 +3,7 @@
 
 #imports
 import pandas as pd
-import os, ipdb
+import os, ipdb, json
 import random, evaluate
 
 import random
@@ -95,19 +95,69 @@ def prepare_sample_text(example):
 script_args.model_name = "meta-llama/Llama-2-7b-hf"
 script_args.size = "7b"
 script_args.seq_length = 2400
+script_args.inf_seq_length = 5000
 
 
 script_args.save_total_limit = 10
-script_args.per_device_train_batch_size = 1
-script_args.gradient_accumulation_steps = 1
+script_args.per_device_train_batch_size = 6
+script_args.gradient_accumulation_steps = 2
 
-# script_args.test_ckpt = "checkpoint-76000" # "checkpoint-4000"
-script_args.test_ckpt = "checkpoint-5000" # "checkpoint-5000"
-i = 1
-script_args.test_dataset = f"./data/LLLM_LONG_SUMMARIZED_TDMS_SQUAD_{i}/fold1"
-script_args.dataset_name = "./data/LLLM_LONG_SUMMARIZED_TDMS_ALL_TEMPLATE/fold1"
-script_args.output_dir = f"./model_ckpt/long_summ_llama2_{script_args.size}_tdms_f1_all_template_seq_len_{script_args.seq_length}"
-script_args.run_name = f"eval_long_summ_llama2_{script_args.size}_tdms_f1_all_template_seq_len_{script_args.seq_length}"
+# script_args.test_ckpt = "checkpoint-20000" # "checkpoint-35000 checkpoint-20000 checkpoint-15000"
+
+# i = 1
+# script_args.test_dataset = f"./data/LLLM_LONG_SUMMARIZED_TDMS_SQUAD_{i}/fold1"
+# script_args.dataset_name = "./data/LLLM_LONG_SUMMARIZED_TDMS_ALL_TEMPLATE/fold1"
+# script_args.output_dir = f"./model_ckpt/long_summ_llama2_{script_args.size}_tdms_f1_all_template_seq_len_{script_args.seq_length}"
+# script_args.run_name = f"eval_long_summ_llama2_{script_args.size}_tdms_f1_all_template_seq_len_{script_args.seq_length}"
+
+# # script_args.test_dataset = "./data/LLLM_AUGMENTED_SUMMARIZED_WITH_ID_ZEROSHOT_TDMS_50_PERCENT/fold1"
+# # script_args.dataset_name = "./data/LLLM_AUGMENTED_SUMMARIZED_WITH_ID_ZEROSHOT_TDMS_50_PERCENT/fold1"
+# # script_args.output_dir = f"./model_ckpt/augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_f1_50_percent_seq_len_{script_args.seq_length}"
+# # script_args.run_name = f"eval_sft_augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_50_percent_seq_len_{script_args.seq_length}"
+# # # script_args.test_ckpt = "checkpoint-5000"
+# # script_args.test_ckpt = "checkpoint-20000"
+# # # script_args.test_ckpt = "checkpoint-35000"
+# # # script_args.test_ckpt = "checkpoint-55000"
+
+# script_args.test_dataset = "./data/LLLM_AUGMENTED_SUMMARIZED_ZEROSHOT_TDMS_50_PERCENT_LONG/fold1"
+# script_args.dataset_name = "./data/LLLM_AUGMENTED_SUMMARIZED_ZEROSHOT_TDMS_50_PERCENT_LONG/fold1"
+# script_args.output_dir = f"./model_ckpt/augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_f1_50_percent_long_seq_len_{script_args.seq_length}"
+# script_args.run_name = f"eval_sft_augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_50_percent_long_seq_len_{script_args.seq_length}"
+# script_args.test_ckpt = "checkpoint-30000"
+
+
+# # script_args.test_dataset = "./data/LLLM_AUGMENTED_SUMMARIZED_ZEROSHOT_TDMS_50_PERCENT_DOCTEAT/fold1"
+# # script_args.dataset_name = "./data/LLLM_AUGMENTED_SUMMARIZED_ZEROSHOT_TDMS_50_PERCENT_DOCTEAT/fold1"
+# # script_args.output_dir = f"./model_ckpt/augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_f1_50_percent_docteat_seq_len_{script_args.seq_length}"
+# # script_args.run_name = f"eval_sft_augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_50_percent_docteat_seq_len_{script_args.seq_length}"
+# # script_args.test_ckpt = "checkpoint-5000"
+# # # script_args.test_ckpt = "checkpoint-15000"
+
+
+#### CORECTED #####
+
+# script_args.test_dataset = "./data/LEADERBOARDS_REC_TDMS_50_PERCENT_TEMPLATES"
+# script_args.dataset_name = "./data/LEADERBOARDS_REC_TDMS_50_PERCENT_TEMPLATES"
+# script_args.output_dir = f"./model_ckpt/augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_f1_50_percent_seq_len_{script_args.seq_length}"
+# script_args.run_name = f"eval_sft_augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_50_percent_seq_len_{script_args.seq_length}"
+# # script_args.test_ckpt = "checkpoint-5000"
+# script_args.test_ckpt = "checkpoint-20000"
+# # script_args.test_ckpt = "checkpoint-35000"
+# # script_args.test_ckpt = "checkpoint-55000"
+
+# script_args.test_dataset = "./data/LEADERBOARDS_LONG_TDMS_50_PERCENT_TEMPLATES"
+# script_args.dataset_name = "./data/LEADERBOARDS_LONG_TDMS_50_PERCENT_TEMPLATES"
+# script_args.output_dir = f"./model_ckpt/augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_f1_50_percent_long_seq_len_{script_args.seq_length}"
+# script_args.run_name = f"eval_sft_augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_50_percent_long_seq_len_{script_args.seq_length}"
+# script_args.test_ckpt = "checkpoint-30000"
+
+
+script_args.test_dataset = "./data/LEADERBOARDS_DOCTEAT_TDMS_50_PERCENT_TEMPLATES"
+script_args.dataset_name = "./data/LEADERBOARDS_DOCTEAT_TDMS_50_PERCENT_TEMPLATES"
+script_args.output_dir = f"./model_ckpt/augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_f1_50_percent_docteat_seq_len_{script_args.seq_length}"
+script_args.run_name = f"eval_sft_augmented_summ_with_id_zeroshot_llama2_{script_args.size}_tdms_50_percent_docteat_seq_len_{script_args.seq_length}"
+script_args.test_ckpt = "checkpoint-5000"
+# script_args.test_ckpt = "checkpoint-15000"
 
 script_args.per_device_train_batch_size = 3
 script_args.gradient_accumulation_steps = 2
@@ -127,6 +177,10 @@ script_args.random_test_sub = 500
 script_args.save_strategy = "steps" #"epoch"
 script_args.evaluation_strategy= "steps" #"epoch",
 
+mode = "validation"
+# mode = "zeroshot"
+
+
 model = AutoPeftModelForCausalLM.from_pretrained(
         f"{script_args.output_dir}/{script_args.test_ckpt}",
         low_cpu_mem_usage=True,
@@ -145,60 +199,103 @@ tokenizer = AutoTokenizer.from_pretrained(
 
 # for i in range(1, 8):
 #     script_args.test_dataset = f"./data/LLLM_DOCTEAT_TDMS_DROP_{i}/fold1"
-for i in range(1, 5):
-    script_args.test_dataset = f"./data/LLLM_LONG_SUMMARIZED_TDMS_SQUAD_{i}/fold1"    
+# for i in range(1, 5):
+#     script_args.test_dataset = f"./data/LLLM_LONG_SUMMARIZED_TDMS_SQUAD_{i}/fold1"    
     
-    dataset = DatasetDict.load_from_disk(f"{script_args.test_dataset}")
-        
-    valid_data = dataset["validation"].shuffle(seed=42)
-
-    labels = []
-    preds = []
-    idx_skip = []
-
-    for idx, valid_ex in tqdm(enumerate(valid_data), total=len(valid_data)):
+dataset = DatasetDict.load_from_disk(f"{script_args.test_dataset}")
     
-        prompt = f"Question: {valid_ex['prompt']}"
-        
-        inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
+valid_data = dataset[mode].shuffle(seed=42)
 
-        if inputs.shape[1] >= 5500:
-            print(f"Validation index {idx} skipped because input.shape: {inputs.shape}, input split length: {len(valid_ex['prompt'].split())}")
-            idx_skip.append(idx)
-            continue 
+labels = []
+preds = []
+idx_skip = []
+i = 0
+processed_paper = []
+# template_selected = "drop1"
 
-        print(f"inputs.shape: {inputs.shape}, input split length: {len(valid_ex['prompt'].split())}")
+# array(['squad_1', 'squad_2', 'squad_3', 'squad_4', 'squad_5', 'squad_6',
+#        'squad_7', 'squad_8', 'drop_1', 'drop_2', 'drop_3', 'drop_4',
+#        'drop_5', 'drop_6', 'drop_7'], dtype=object)
+print("##################################################################################")
+print(f"Test data {script_args.test_dataset}")
+print(f"Test ckpt {script_args.test_ckpt}")
+print(f"Partial THRESHOLD {THRESHOLD}")
+print(f"MODE {mode}")
+print(f"Inference seq lenght {script_args.inf_seq_length}")
+print("##################################################################################")
 
-        generate_kwargs = dict(
-            input_ids=inputs,
-            max_new_tokens=256,
-            pad_token_id=tokenizer.eos_token_id
-        )
+for idx, valid_ex in tqdm(enumerate(valid_data), total=len(valid_data)):
+
+    # if valid_ex['id'] in processed_paper or valid_ex['template'] != template_selected :
+    # 1642 : validation todal 
+    # 1459 : after removing paper longer context 
+
+    if valid_ex['id'] in processed_paper :
+        continue
+
+    # if mode ==  "validation":
+    #     if len(processed_paper) ==  1459:
+    #         break
+    # else:
+    #     if len(processed_paper) ==  1459:
+    #         break
         
-        outputs = model.generate(**generate_kwargs)
-        predictions = tokenizer.decode(outputs[0])
-        
-        preds.append(predictions.split("Answer: ")[-1].replace("</s>", ""))
-        labels.append(valid_ex['answer'])
-        
-        # if idx == len(valid_data)//2 :
-        #     results = Metrics.evaluate_property_wise_json_based(label_list=labels, prediction_list=preds)
-        #     results.update(Metrics.evaluate_rouge(label_list=labels, prediction_list=preds))
-        #     print(f"Intermediate Results:")
-        #     for key, value in results.items():
-        #         print(f"{key}: {value}")
+
+    prompt = f"Question: {valid_ex['prompt']}"
     
-    results = Metrics.evaluate_property_wise_json_based(label_list=labels, prediction_list=preds)
-    results.update(Metrics.evaluate_rouge(label_list=labels, prediction_list=preds))
+    inputs = tokenizer.encode(prompt, max_length=script_args.inf_seq_length, truncation=True, return_tensors="pt").to(device)
+
+    # if inputs.shape[1] >= 5500:
+    #     print(f"Validation index {idx} skipped because input.shape: {inputs.shape}, input split length: {len(valid_ex['prompt'].split())}")
+    #     idx_skip.append(idx)
+    #     continue 
+
+    # print(f"inputs.shape: {inputs.shape}, input split length: {len(valid_ex['prompt'].split())}")
+
+    generate_kwargs = dict(
+        input_ids=inputs,
+        max_new_tokens=256,
+        pad_token_id=tokenizer.eos_token_id
+    )
     
-    print(f"Test data {script_args.test_dataset}")
-    print(f"Test ckpt {script_args.test_ckpt}")
-    print(f"Partial THRESHOLD {THRESHOLD}")
-    print(f"Total index skipped {len(idx_skip)}")
-    print(f"Index skipped {idx_skip}")
+    outputs = model.generate(**generate_kwargs)
+    predictions = tokenizer.decode(outputs[0])
     
-    print("##################################################################################")
-    print(f"Results:")
-    for key, value in results.items():
-        print(f"{key}: {value}")
-    print("##################################################################################")
+    preds.append(predictions.split("Answer: ")[-1].replace("</s>", ""))
+    labels.append(valid_ex['answer'])
+
+    processed_paper.append(valid_ex['id'])
+    
+    # if idx == len(valid_data)//2 :
+    #     results = Metrics.evaluate_property_wise_json_based(label_list=labels, prediction_list=preds)
+    #     results.update(Metrics.evaluate_rouge(label_list=labels, prediction_list=preds))
+    #     print(f"Intermediate Results:")
+    #     for key, value in results.items():
+    #         print(f"{key}: {value}")
+
+try:
+    with open(f'{script_args.output_dir}/labels_{mode}_{script_args.test_ckpt}_{THRESHOLD}_seq_{script_args.inf_seq_length}.json', 'w') as fp:
+        json.dump(labels, fp, indent=4)
+
+    with open(f'{script_args.output_dir}/preds_{mode}_{script_args.test_ckpt}_{THRESHOLD}_seq_{script_args.inf_seq_length}.json', 'w') as fp:
+        json.dump(preds, fp, indent=4)
+except:
+    print("failed to save jsons")
+    
+results = Metrics.evaluate_property_wise_json_based(label_list=labels, prediction_list=preds)
+results.update(Metrics.evaluate_rouge(label_list=labels, prediction_list=preds))
+
+print(f"Test data {script_args.test_dataset}")
+print(f"Test ckpt {script_args.test_ckpt}")
+print(f"Partial THRESHOLD {THRESHOLD}")
+print(f"MODE {mode}")
+print(f"Inference seq lenght {script_args.inf_seq_length}")
+print(f"Lenght procesed paper {len(processed_paper)}")
+print(f"Total index skipped {len(idx_skip)}")
+print(f"Index skipped {idx_skip}")
+
+print("##################################################################################")
+print(f"Results:")
+for key, value in results.items():
+    print(f"{key}: {value}")
+print("##################################################################################")

@@ -1,20 +1,27 @@
-import json, ipdb
-import re
 import ast
+import json
+import os
+import os.path
+import re
+import sys
 from collections import Counter
 from enum import Enum
+from os import walk
 
 import evaluate
-import numpy
+import ipdb
+import numpy as np
+import scipy.stats
 from fuzzywuzzy import fuzz
+from scipy.optimize import linear_sum_assignment
 
-numpy.random.seed(42)
+np.random.seed(42)
 unanswerable = "unanswerable"
-
+# unanswerable = ""
 
 feature_names = ["task", "dataset", "metric"]
 
-THRESHOLD = 80 #85
+THRESHOLD = 50  # 85
 
 class MatchType(Enum):
     EXACT = "EXACT"
@@ -379,11 +386,74 @@ def make_list_of_pairs_text_based(label_list, prediction_list):
     return list_of_label_prediction_pairs
 
 
+def apply_hungarian_algorithm(data_with_similarity_scores, len_gt, len_pred):
+    """_summary_
+    The Hungarian Algorithm will be used to find the optimal assignment between ground truth entries and predictions that maximizes the total similarity score.
+    Returns:
+        _type_: _description_
+    """
+    # Transforming data into a matrix
+    num_gt = len_gt  # Number of ground truth entries
+    num_pred = len_pred  # Number of predictions
+    similarity_matrix = np.zeros((num_gt, num_pred))
+
+    # Filling the similarity matrix with provided scores
+    for i in range(num_gt):
+        for j in range(num_pred):
+            similarity_matrix[i, j] = data_with_similarity_scores[i * num_pred + j][2]
+
+    # Convert to cost matrix for Hungarian algorithm
+    max_similarity = 100  # Assuming 100 is the maximum possible similarity score
+    cost_matrix = max_similarity - similarity_matrix
+
+    # Apply the Hungarian algorithm to find the optimal assignment
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+
+    # Extract the matched pairs and their similarity scores
+    matched_pairs = [(row_ind[i], col_ind[i]) for i in range(len(row_ind))]
+    matched_similarity_scores = [
+        similarity_matrix[row, col] for row, col in matched_pairs
+    ]
+
+    matched_pairs, matched_similarity_scores
+
+    # Reformatting the matched pairs to include the original data and similarity scores
+    formatted_results = []
+
+    for row, col in matched_pairs:
+        # Retrieve the original ground truth and prediction entries
+        ground_truth_entry = data_with_similarity_scores[row * num_pred + col][0]
+        prediction_entry = data_with_similarity_scores[row * num_pred + col][1]
+        # Retrieve the similarity score
+        similarity_score = similarity_matrix[row, col]
+
+        # Append to the results in the desired format
+        formatted_result = (ground_truth_entry, prediction_entry, similarity_score)
+        formatted_results.append(formatted_result)
+
+    return formatted_results
+
+
 def make_list_of_pairs_json_based(label_list, prediction_list):
+    """_summary_
+
+    THis takes care of cases where the prediction is not aligned with the ground truth
+    by using the fuzzy sscore to pair together predictions that are most likelly to be the same
+
+    Args:
+        label_list (_type_): _description_
+        prediction_list (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     # make list of (label,prediction,similarity)
     list_of_label_prediction_pairs = []
     for label, prediction in zip(label_list, prediction_list):
         pair_list = []
+        gt_count = set()
+        pred_count = set()
         label_contribution_list = get_contribution_list_json_based(label)
         prediction_contribution_list = get_contribution_list_json_based(prediction)
         for item1 in label_contribution_list:
@@ -393,31 +463,50 @@ def make_list_of_pairs_json_based(label_list, prediction_list):
                 if isinstance(item1, dict):
                     try:
                         item1_str = json.dumps(item1)
-                    except :
-                        print("Issue parsing dict")
-                        print(item1)
-                        continue 
-            
-                    
+                        gt_count.add(item1_str)
+                    except:
+                        # print("Issue parsing dict")
+                        # print(item1)
+                        continue
+                else:
+                    gt_count.add(str(item1))
+
                 if isinstance(item2, dict):
                     try:
                         item2_str = json.dumps(item2)
-                    except :
-                        print("Issue parsing dict")
-                        print(item2)
-                        continue 
-                    
+                        pred_count.add(item2_str)
+                    except:
+                        # print("Issue parsing dict")
+                        # print(item2)
+                        continue
+                else:
+                    pred_count.add(str(item2))
 
                 pair_list.append(
                     (item1, item2, calculate_fuzz_ratio(item1_str, item2_str))
                 )
 
-        max_selectable_pairs = min(
-            len(label_contribution_list), len(prediction_contribution_list)
-        )
-        top_similar_pairs = sorted(pair_list, key=lambda x: x[2], reverse=True)[
-            :max_selectable_pairs
-        ]
+        
+        if len(gt_count)*len(pred_count) == len(pair_list):
+            top_similar_pairs = apply_hungarian_algorithm(
+                pair_list,
+                len_gt=len(gt_count),
+                len_pred=len(pred_count),
+            )
+        elif len(label_contribution_list)*len(prediction_contribution_list) == len(pair_list):
+            top_similar_pairs = apply_hungarian_algorithm(
+                pair_list,
+                len_gt=len(label_contribution_list),
+                len_pred=len(prediction_contribution_list),
+            )
+        else:  
+            max_selectable_pairs = min(
+                len(label_contribution_list), len(prediction_contribution_list)
+            )
+            top_similar_pairs = sorted(pair_list, key=lambda x: x[2], reverse=True)[
+                :max_selectable_pairs
+            ]
+        
         list_of_label_prediction_pairs.extend(top_similar_pairs)
 
     return list_of_label_prediction_pairs
@@ -443,7 +532,7 @@ def get_feature_based_denominator_count_json_based(feature_name, item_list):
     result = 0
     for item in item_list:
         json_item_list = get_contribution_list_json_based(item)
-        if len(json_item_list)>=1:
+        if len(json_item_list) >= 1:
             if is_answerable(json_item_list[0]):
                 result += get_number_of_values_of_feature_json_based(
                     feature_name, json_item_list
@@ -463,7 +552,7 @@ def get_r0_partial_denominator_count_json_based(item_list):
     result = 0
     for item in item_list:
         json_item_list = get_contribution_list_json_based(item)
-        if len(json_item_list)>=1:
+        if len(json_item_list) >= 1:
             if is_answerable(json_item_list[0]):
                 result += get_number_of_r0_values_json_based(json_item_list)
 
@@ -769,7 +858,7 @@ def r0_partial_precision_json_based(prediction_list, pair_list):
 
 def parse_json_string(data):
     missed = 0
-    
+
     if data[-1] == "]":
         # Convert to q
         try:

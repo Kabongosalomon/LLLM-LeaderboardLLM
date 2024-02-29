@@ -98,6 +98,14 @@ script_args.dataset_name = "./data/LLLM_AUGMENTED_SUMMARIZED_WITH_ID_ZEROSHOT_TD
 script_args.output_dir = f"./model_ckpt/augmented_summ_with_id_zeroshot_mistralai_{script_args.size}_tdms_f1_50_percent_seq_len_{script_args.seq_length}"
 script_args.run_name = f"sft_augmented_summ_with_id_zeroshot_mistralai_{script_args.size}_tdms_50_percent_seq_len_{script_args.seq_length}"
 
+# script_args.dataset_name = "./data/LLLM_AUGMENTED_SUMMARIZED_ZEROSHOT_TDMS_50_PERCENT_LONG/fold1"
+# script_args.output_dir = f"./model_ckpt/augmented_summ_with_id_zeroshot_mistralai_{script_args.size}_tdms_f1_50_percent_long_seq_len_{script_args.seq_length}"
+# script_args.run_name = f"sft_augmented_summ_with_id_zeroshot_mistralai_{script_args.size}_tdms_50_percent_long_seq_len_{script_args.seq_length}"
+
+# script_args.dataset_name = "./data/LLLM_AUGMENTED_SUMMARIZED_ZEROSHOT_TDMS_50_PERCENT_DOCTEAT/fold1"
+# script_args.output_dir = f"./model_ckpt/augmented_summ_with_id_zeroshot_mistralai_{script_args.size}_tdms_f1_50_percent_docteat_seq_len_{script_args.seq_length}"
+# script_args.run_name = f"sft_augmented_summ_with_id_zeroshot_mistralai_{script_args.size}_tdms_50_percent_docteat_seq_len_{script_args.seq_length}"
+
 script_args.per_device_train_batch_size = 3
 script_args.gradient_accumulation_steps = 2
 script_args.per_device_eval_batch_size = 2

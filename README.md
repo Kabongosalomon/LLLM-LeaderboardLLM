@@ -15,6 +15,10 @@ LLLM-LeaderboardLLM/data_proccess/pwc_distant_label.py
 ```bash
 # from data_process repository 
 python pwc_distant_label.py --path_source pwc/dec092023/evaluation-tables.json --path_target annotations_dec092023
+
+python pwc_distant_label.py --path_source pwc/Feb262024/evaluation-tables.json --path_target annotations_Feb262024
+
+sbatch cpu_based_no_lb.sh python pwc_distant_label.py --path_source pwc/Feb262024/evaluation-tables.json --path_target annotations_Feb262024
 ```
 
 ## Download tex file from arxiv 
@@ -23,6 +27,10 @@ LLLM-LeaderboardLLMdata_proccess/download_tex_from_arxiv.sh
 ```bash
 # from data_process repository 
 bash download_tex_from_arxiv.sh
+
+bash download_tex_from_arxiv.sh annotations_Feb262024/final_paper_links.txt arxiv_leaderboard_Feb262024
+
+# sbatch cpu_based.sh bash download_tex_from_arxiv.sh annotations_dec092023/final_paper_links.txt arxiv_no_leaderboard_25_000
 ```
 
 ```bash
@@ -83,6 +91,24 @@ bash tex_to_txt.sh arxiv_no_leaderboard_tex_25_000_summarised_dec092023 arxiv_no
 
 
 ```
+
+### Text to XML
+
+```bash
+
+bash tex_to_xml.sh arxiv_tex_dec092023 arxiv_xml_dec092023
+
+sbatch cpu_based.sh bash tex_to_xml.sh arxiv_tex_dec092023 arxiv_xml_lb_dec092023
+sbatch cpu_based_no_lb.sh bash tex_to_xml.sh arxiv_no_leaderboard_tex_25_000 arxiv_xml_no_lb_dec092023
+
+ls arxiv_xml_lb_dec092023 | wc -l
+ls arxiv_xml_no_lb_dec092023 | wc -l
+ls arxiv_xml_lb_dec092023_DOCTEAT | wc -l
+
+
+```
+
+code --diff
 
 References:
 - https://huggingface.co/blog/dpo-trl
